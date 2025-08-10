@@ -1,0 +1,18 @@
+/// COMANDOS BASICOS EN CMD ///
+
+- Ver ubicación actual → cd
+- Subir un nivel → cd..
+- Ver subcarpetas → dir
+- Entrar en cierta carpeta → cd "nombre_carpeta"
+- Viajar a ruta absoluta → cd C:\Users\Tuti\Desktop\UNSAM\APS
+
+
+
+- Crear entorno virtual → python -m venv "nombre"
+- Eliminar entorno virtual → rmdir /s /q "nombre" (debo estar en la misma ruta que el VE)
+- Activar entorno virtual → "nombre"\Scripts\activate.bat
+- Salir del entorno virtual → deactivate (al cerrar la consola el VE se desactiva automáticamente)
+
+- Verificar versión de un programa → python --version
+- Verificar librerias instaladas → pip list
+- Instalar y actualizar librerias → pip install --upgrade "nombre_libreria" (instalar pip pytc2 spyder)
