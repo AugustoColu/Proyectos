@@ -45,3 +45,12 @@ plt.grid (True)
 
 plt.show ()
 
+### Ortogonalidad ###
+
+inner_s12 = np.inner (ss_1, ss_2)
+
+### Energía ###
+
+E_ss1 = np.sum (ss_1**2) / 2000
+print (E_ss1) # la energía de una onda es amplitud al cuadrado sobre 2
+
