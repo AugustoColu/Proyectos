@@ -2,107 +2,125 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sp
 
-def func_senoidal (a_max, frec, fase, cant_muestras, frec_muestreo, v_medio):
+def eje_temporal (N, fs):
     
-    Ts = 1/frec_muestreo
-    t_final = cant_muestras * Ts
+    # Resolución espectral = fs / N
+    # t_final siempre va a ser 1/Res. espec.
+    Ts = 1/fs
+    t_final = N * Ts # su inversa es la resolución espectral
     tt = np.arange (0, t_final, Ts) # defino una sucesión de valores para el tiempo
-    xx = a_max * np.sin (2 * np.pi * frec * tt + fase) + v_medio # tt es un vector, por ende la función sin se evalúa para cada punto del mismo
+    return tt
+
+def func_senoidal (amp, frec, fase, tt, v_medio):
+    
+    xx = amp * np.sin (2 * np.pi * frec * tt + fase) + v_medio # tt es un vector, por ende la función sin se evalúa para cada punto del mismo
     # xx tendrá la misma dimensión que tt
-    return tt, xx
+    return xx
 
 
 ### Inicializo variables ###
 
-a_max = 0
+amplitud = 0
 frec = 0
 fase = 0
-cant_muestras = 2000
-frec_muestreo = 1000000
+N = 500
+fs = 100000
 v_medio = 0
 
-print ("\nSe toman 2000 muestras con una frecuencia de muestreo de 1MHz para todas las señales \n")
+print ("\nSe toman 500 muestras con una frecuencia de muestreo de 100KHz para todas las señales \n")
+
+tt = eje_temporal (N, fs)
+
 
 ### Señal 1 ###
 
-tt_1, ss_1 = func_senoidal (a_max = 1, frec = 2000, fase = 0, cant_muestras = 2000, frec_muestreo = 1000000, v_medio = 0)
+ss_1 = func_senoidal (1, 2000, 0, tt, 0)
 
 plt.subplot (6, 2, 1)
-plt.plot (tt_1, ss_1, linestyle='-', color='black')
+plt.plot (tt, ss_1, linestyle='-', color='black')
 plt.title ("Señal sinusoidal de 2 KHz")
 plt.xlabel ("Tiempo")
 plt.ylabel ("Amplitud")
 plt.grid (True)
 
-print ("La potencia de la señal 1 es de", np.sum (ss_1**2)/cant_muestras, "[magnitud]/seg")
+print ("La potencia de la señal 1 es de", np.sum (ss_1**2)/N, "[magnitud]/seg")
 
 ### Señal 2 ###
 
-tt_2, ss_2 = func_senoidal (a_max = 10, frec = 2000, fase = np.pi/2, cant_muestras = 2000, frec_muestreo = 1000000, v_medio = 0)
+ss_2 = func_senoidal (10, 2000, np.pi/2, tt, 0)
 
 plt.subplot (6, 2, 3)
-plt.plot (tt_2, ss_2, linestyle='-', color='black')
+plt.plot (tt, ss_2, linestyle='-', color='black')
 plt.title ("Sinusoidal amplificada y desfasada")
 plt.xlabel ("Tiempo")
 plt.ylabel ("Amplitud")
 plt.grid (True)
 
-print ("La potencia de la señal 2 es de", np.sum (ss_2**2)/cant_muestras, "[magnitud]/seg")
+print ("La potencia de la señal 2 es de", np.sum (ss_2**2)/N, "[magnitud]/seg")
 
 ### Señal 3 ###
 
-tt_3, moduladora = func_senoidal (a_max = 10, frec = 1000, fase = 0, cant_muestras = 2000, frec_muestreo = 1000000, v_medio = 0)
-ss_3 = moduladora * ss_1
+moduladora = func_senoidal (1, 1000, np.pi/2, tt, 0)
+ss_3 = moduladora * ss_2
 
 plt.subplot (6, 2, 5)
-plt.plot (tt_3, ss_3, linestyle='-', color='black')
+plt.plot (tt, ss_3, linestyle='-', color='black')
 plt.title ("Señal modulada en amplitud")
 plt.xlabel ("Tiempo")
 plt.ylabel ("Amplitud")
 plt.grid (True)
 
-print ("La potencia de la señal 3 es de", np.sum (ss_3**2)/cant_muestras, "[magnitud]/seg")
+print ("La potencia de la señal 3 es de", np.sum (ss_3**2)/N, "[magnitud]/seg")
 
 ### Señal 4 ###
 
-ss_4 = ss_3 * np.square (0.75) # pues la energía (en este caso, potencia) es directamente proporcional al cuadrado de la amplitud
+recorte = 0.75
+ss_4 = np.clip (ss_1, -recorte, recorte)
 
 plt.subplot (6, 2, 7)
-plt.plot (tt_1, ss_4, linestyle='-', color='black')
-plt.title ("Señal modulada y recordata al 75%")
+plt.plot (tt, ss_4, linestyle='-', color='black')
+plt.title ("Señal modulada en amplitud")
 plt.xlabel ("Tiempo")
 plt.ylabel ("Amplitud")
 plt.grid (True)
 
-print ("La potencia de la señal 4 es de", np.sum (ss_4**2)/cant_muestras, "[magnitud]/seg")
+print ("La potencia de la señal 4 es de", np.sum (ss_4**2)/N, "[magnitud]/seg")
 
 ### Señal 5 ###
 
-ss_5 = sp.square (2 * np.pi * 4000 * tt_1)
+ss_5 = sp.square (2 * np.pi * 4000 * tt)
 
 plt.subplot (6, 2, 9)
-plt.plot (tt_1, ss_5, linestyle='-', color='black')
+plt.plot (tt, ss_5, linestyle='-', color='black')
 plt.title ("Señal cuadrada de frecuencia 4 KHz")
 plt.xlabel ("Tiempo")
 plt.ylabel ("Amplitud")
 plt.grid (True)
 
-print ("La potencia de la señal 5 es de", np.sum (ss_5**2)/cant_muestras, "[magnitud]/seg")
+print ("La potencia de la señal 5 es de", np.sum (ss_5**2)/N, "[magnitud]/seg")
 
 ### Señal 6 ###
-"""
-ss_6 =
+
+pulso = np.zeros (len(tt))
+duracion = 0.01
+flanco_subida = 0
+flanco_bajada = flanco_subida + duracion
+
+pulso [(tt >= flanco_subida) & (tt <= flanco_bajada)] = 1
+# esto hace que el vector tome el valor 1 para los índices que cumplen la condición que figura entre []
 
 plt.subplot (6, 2, 11)
-plt.plot (tt_1, ss_6, linestyle='-', color='black')
+plt.plot (tt, pulso, linestyle='-', color='black')
 plt.title ("Pulso rectangular de 10 ms")
 plt.xlabel ("Tiempo")
 plt.ylabel ("Amplitud")
+plt.xlim (-0.1, 0.1)
+plt.ylim (-1, 2)
 plt.grid (True)
 
-print ("La potencia de la señal 6 es de", np.sum (ss_6**2)/cant_muestras, "[magnitud]/seg")
-"""
+print ("La potencia de la señal 6 es de", np.sum (pulso**2)/N, "[magnitud]/seg")
 print ()
+
 
 ### Verifico ortogonalidad entre la primera señal y las demás ###
 
@@ -129,15 +147,14 @@ if (np.isclose (np.inner (ss_1, ss_5), 0)):
     print ("SON ortogonales")
 else:
     print ("NO son ortogonales")
-    """
-print ("Producto interno entre las señales 1 y 6 ->", np.inner (ss_1, ss_6), "-> por lo tanto", end = " ")
-if (np.isclose (np.inner (ss_1, ss_6), 0)):
+    
+print ("Producto interno entre las señales 1 y 6 ->", np.inner (ss_1, pulso), "-> por lo tanto", end = " ")
+if (np.isclose (np.inner (ss_1, pulso), 0)):
     print ("SON ortogonales")
 else:
     print ("NO son ortogonales")
-"""
-
-
+    
+    
 ### Autocorrelación de la primera señal ###
 
 correlacion_11 = np.correlate (ss_1, ss_1, mode = 'full') # esto me devuelve un vector de la misma dimensión que ss_1
@@ -163,19 +180,20 @@ plt.grid (True)
 correlacion_14 = np.correlate (ss_1, ss_4, mode = 'full')
 plt.subplot (6, 2, 8)
 plt.plot (np.arange (len(correlacion_14)), correlacion_14, linestyle='-', color='green')
-plt.title ("Correlación entre las señales 1 y 3")
+plt.title ("Correlación entre las señales 1 y 4")
 plt.grid (True)
 
 correlacion_15 = np.correlate (ss_1, ss_5, mode = 'full')
 plt.subplot (6, 2, 10)
 plt.plot (np.arange (len(correlacion_15)), correlacion_15, linestyle='-', color='green')
-plt.title ("Correlación entre las señales 1 y 3")
+plt.title ("Correlación entre las señales 1 y 5")
 plt.grid (True)
-"""
-correlacion_16 = np.correlate (ss_1, ss_6, mode = 'full')
+
+correlacion_16 = np.correlate (ss_1, pulso, mode = 'full')
 plt.subplot (6, 2, 12)
 plt.plot (np.arange (len(correlacion_16)), correlacion_16, linestyle='-', color='green')
-plt.title ("Correlación entre las señales 1 y 3")
+plt.title ("Correlación entre las señales 1 y 6")
 plt.grid (True)
-"""
+
+plt.tight_layout ()
 plt.show ()
