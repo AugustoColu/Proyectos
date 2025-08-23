@@ -1,7 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import scipy.signal as sp
-from scipy.io import wavfile
 
 def eje_temporal (N, fs):
     
@@ -24,8 +23,8 @@ def func_senoidal (amp, frec, fase, tt, v_medio):
 amplitud = 0
 frec = 0
 fase = 0
-N = 500
-fs = 100000
+N = 2000
+fs = 400000
 v_medio = 0
 
 print ("\nSe toman 500 muestras con una frecuencia de muestreo de 100KHz para todas las señales \n")
@@ -34,7 +33,6 @@ tt = eje_temporal (N, fs)
 
 
 ### Señal 1 ###
-plt.figure (1)
 
 ss_1 = func_senoidal (1, 2000, 0, tt, 0)
 
@@ -116,6 +114,8 @@ plt.plot (tt, pulso, linestyle='-', color='black')
 plt.title ("Pulso rectangular de 10 ms")
 plt.xlabel ("Tiempo")
 plt.ylabel ("Amplitud")
+plt.xlim (-0.1, 0.1)
+plt.ylim (-1, 2)
 plt.grid (True)
 
 print ("La potencia de la señal 6 es de", np.sum (pulso**2)/N, "[magnitud]/seg")
@@ -195,9 +195,10 @@ plt.plot (np.arange (len(correlacion_16)), correlacion_16, linestyle='-', color=
 plt.title ("Correlación entre las señales 1 y 6")
 plt.grid (True)
 
+plt.figure ()
+
 
 ### Verificación de la igualdad 2.sen(a).sen(b) = cos(a-b) - cos(a+b) ###
-plt.figure (2)
 
 w = 5000
 xx_1 = np.cos (w*tt) - np.cos (3*w*tt)
@@ -218,14 +219,3 @@ plt.ylabel ("Amplitud")
 plt.grid (True)
 
 plt.show ()
-
-### Trabajando con efecto de sonido .wav ###
-plt.figure (3)
-
-fs_wav, x_wav = wavfile.read ('sfx.wav') # la frecuencia de muestreo del audio es un dato que viene contenido en el mismo archivo
-energia_wav = np.sum (x_wav**2)
-print ("\nLa energía del WAV es", energia_wav)
-
-durac = len(x_wav) / fs_wav
-tt_wav = np.linspace (0, durac, len(x_wav)) # linspace divide el intervalo (0, durac) en len(x_wav) partes equiespaciadas
-plt.plot (tt_wav, x_wav)

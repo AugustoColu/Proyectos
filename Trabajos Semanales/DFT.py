@@ -9,29 +9,27 @@ def func_senoidal (amp, frec, fase, tt, v_medio):
     return xx
 
 
-N = 60
-tt = np.arange (0, N-1, 1) / N
-x = func_senoidal (10, 1, 0, tt, 0)
+N = 8
+eje_N = np.linspace (0, N-1, N)
+x = np.zeros (N)
+x[4] = 1 # creo una delta(x-4)
 
 X = np.zeros (N, dtype = np.complex128)
 
-for k in range (0, N-1, 1):
-    for n in range (0, N-1, 1):
+for k in range (0, N, 1):
+    for n in range (0, N, 1):
         X[k] += x[n] * np.exp(-1j*k*2*np.pi*n/N)
     print (X[k])
     
     
 # Pasaje de N (adimensional) a frecuencia -> tt * Δf
 
-        
 plt.subplot (2, 1, 1)
-plt.plot (tt, x, linestyle='', marker='s', color='black')
+plt.stem (eje_N, x)
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-plt.plot (X, color='green')
+plt.plot (eje_N, X, linestyle='-', marker='o', color='black')
 plt.grid (True)
 
 plt.show ()
-        
-    
