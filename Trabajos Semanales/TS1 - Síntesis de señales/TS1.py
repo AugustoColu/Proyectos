@@ -36,7 +36,8 @@ tt = eje_temporal (N, fs)
 ### Señal 1 ###
 plt.figure (1)
 
-ss_1 = func_senoidal (1, 2000, 0, tt, 0)
+ss_1 = func_senoidal (amp = 1, frec = 2000, fase = 0, tt = tt, v_medio = 0)
+# Es una buena práctica explicitar los parámetros que se pasan a la función
 
 plt.subplot (6, 2, 1)
 plt.plot (tt, ss_1, linestyle='-', color='black')
