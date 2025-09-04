@@ -86,3 +86,18 @@ print ("Varianza =", np.var(x_norm), " ->  SD =", np.std(x_norm), " ->  Media ="
 A = np.sum ((np.abs(x))**2)
 B = np.sum ((np.abs(X))**2) / N
 print (A-B)
+
+# %% Zero-Padding
+
+zeros = np.zeros (len(x)*9)
+xPadding = np.concatenate ((x, zeros))
+XPadding = fft (xPadding)
+
+#ttPadding = eje_temporal (N = 10*N, fs = 1000)
+ttPadding = np.arange (10*N) * (fs / (10*N))
+
+plt.plot (ttPadding, np.log10(np.abs(XPadding)*10), linestyle='', marker='x')
+plt.plot (ff, np.log10(np.abs(X)*10))
+# plt.xlim (0, 500)
+plt.grid (True)
+plt.show ()

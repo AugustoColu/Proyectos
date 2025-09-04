@@ -287,6 +287,7 @@ plt.xlabel ("Tiempo [seg]")
 plt.ylabel ("Amplitud [V]")
 plt.grid (True)
 
+
 plt.subplot (3, 1, 3)
 plt.plot (tt, y_3, color='green')
 plt.title ("Salida correspondiente al sistema y[n] = x[n] + 3 . y[n−10]")
