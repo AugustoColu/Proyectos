@@ -10,11 +10,18 @@ def eje_temporal (N, fs):
     tt = np.arange (0, t_final, Ts) # defino una sucesión de valores para el tiempo
     return tt
 
-def func_senoidal (tt, amp, frec, fase, v_medio):
+def func_senoidal (tt, amp, frec, fase, v_medio, SNR):
     
     xx = amp * np.sin (2 * np.pi * frec * tt + fase) + v_medio # tt es un vector, por ende la función sin se evalúa para cada punto del mismo
-    # xx tendrá la misma dimensión que tt
-    return xx
+    potencia_xx = np.sum (xx**2)
+    
+    if SNR == None:
+        return xx
+    
+    potencia_ruido = potencia_xx / (10**(SNR/10))
+    ruido = np.sqrt (potencia_ruido) * np.random.randn (len(xx))
+    
+    return xx + ruido
 
 
 N = 1000
@@ -25,11 +32,11 @@ tt = eje_temporal (N, fs)
 nn = np.arange (N) # Vector adimensional de muestras
 ff = np.arange (N) * df # Vector en frecuencia al escalar las muestras por la resolución espectral
 
-x = func_senoidal (tt = tt, amp = 1, frec = (N/4)*df, fase = 0, v_medio = 0) 
+x = func_senoidal (tt = tt, amp = 1, frec = (N/4)*df, fase = 0, v_medio = 0, SNR = 2000) 
 # observar que (N/4)*df = (N/4)*(fs/N) = fs/4, por ende no importa la cantidad de muestras, siempre la frecuencia será N/4
 X = fft (x)
 
-xx = func_senoidal (tt = tt, amp = 1, frec = ((N/4)+0.5)*df, fase = 0, v_medio = 0)
+xx = func_senoidal (tt = tt, amp = 1, frec = ((N/4)+0.5)*df, fase = 0, v_medio = 0, SNR = None)
 XX = fft (xx)
 
 
@@ -96,8 +103,8 @@ XPadding = fft (xPadding)
 #ttPadding = eje_temporal (N = 10*N, fs = 1000)
 ttPadding = np.arange (10*N) * (fs / (10*N))
 
-plt.plot (ttPadding, np.log10(np.abs(XPadding)*10), linestyle='', marker='x')
-plt.plot (ff, np.log10(np.abs(X)*10))
+plt.plot (ttPadding, 10*np.log10(np.abs(XPadding)), linestyle='', marker='x')
+plt.plot (ff, 10*(np.log10(np.abs(X))))
 # plt.xlim (0, 500)
 plt.grid (True)
 plt.show ()
