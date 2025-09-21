@@ -3,16 +3,6 @@ import numpy as np
 import scipy.signal as sp
 
 
-def eje_temporal (N, fs):
-    
-    # Resolución espectral = fs / N
-    # t_final siempre va a ser 1/Res. espec.
-    Ts = 1/fs
-    t_final = N * Ts # su inversa es la resolución espectral
-    tt = np.arange (0, t_final, Ts) # defino una sucesión de valores para el tiempo
-    return tt
-
-
 def func_senoidal (tt, frec, amp, fase, v_medio):
     
     xx = amp * np.sin (2 * np.pi * frec * tt + fase) + v_medio # tt es un vector, por ende la función sin se evalúa para cada punto del mismo
@@ -63,8 +53,9 @@ N = 500
 fs = 100000
 df = fs/N
 
-tt = eje_temporal (N, fs)
-ff = np.arange (N) * df
+tt = np.arange (0, N/fs, 1/fs) # vector de tiempos
+nn = np.arange (N) # vector adimensional de muestras
+ff = np.arange (N) * df # vector de frecuencias
 
 print ("\nSe toman 500 muestras con una frecuencia de muestreo de 100KHz para todas las señales \n")
 
@@ -73,7 +64,6 @@ print ("\nSe toman 500 muestras con una frecuencia de muestreo de 100KHz para to
 
 ss_1 = func_senoidal (tt = tt, frec = 2000, amp = 1, fase = 0, v_medio = 0)
 y_1 = LTI_1 (x = ss_1)
-# Es una buena práctica explicitar los parámetros que se pasan a la función
 
 plt.figure (1)
 
