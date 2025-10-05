@@ -31,34 +31,64 @@ plt.plot(hb_2)
 plt.tight_layout ()
 plt.show ()
 
+# ---------------------------------------------------- ECG con ruido ---------------------------------------------------- #
 
-ecg_one_lead = np.load ('ecg_sin_ruido.npy') # toma el array que se encuentra en el archivo
+ecg_recorte = ecg_one_lead[670000:700000].ravel()
 
-N_ECG = len (ecg_one_lead)
+N_ECG_cr = len (ecg_recorte)
+
+df_ECG_cr = fs_ECG / N_ECG_cr
+nn_ECG_cr = np.arange (N_ECG_cr)
+ff_ECG_cr = np.arange (N_ECG_cr) * df_ECG_cr
+
+cant_promedios_cr = 12
+nperseg_cr = N_ECG_cr // cant_promedios_cr
+
+ff_ECG_cr, psd_ECG_cr = sp.welch (ecg_recorte, nfft = 10*nperseg_cr, fs = fs_ECG, nperseg = nperseg_cr, window='flattop')
+
+
+# ---------------------------------------------------- ECG sin ruido ---------------------------------------------------- #
+
+ecg_sin_ruido = np.load ('ecg_sin_ruido.npy') # toma el array que se encuentra en el archivo
+
+N_ECG = len (ecg_sin_ruido)
 
 df_ECG = fs_ECG / N_ECG
 nn_ECG = np.arange (N_ECG)
-ff_ECG = np.arange (N_ECG) * df_ECG
 
-cant_promedios = 10 # parámetro inversamente proporcional a la varianza 
+cant_promedios = 12 # parámetro inversamente proporcional a la varianza 
                     # en cant_promedios=1 tengo algo muy similar a la FFT pelada
                     # se debe ajustar la cantidad de promedios según: 1) mucha varianza, me quedé corto. 2) se corre el centro de masa del espectro, me fui al pasto
 nperseg = N_ECG // cant_promedios
-ff_ECG, psd = sp.welch (ecg_one_lead, nfft = 10*nperseg, fs = fs_ECG, nperseg = nperseg, window='flattop') # N/nperseg es la cantidad de promedios que quiero hacer
-# normalmente quiero tener un padding de al menos 1000 muestras (tomar con pinzas), en este caso depende de nperseg, ajusto en el parámetro nfft
+ff_ECG, psd_ECG = sp.welch (ecg_sin_ruido, nfft = 10*nperseg, fs = fs_ECG, nperseg = nperseg, window='flattop') # N/nperseg es la cantidad de promedios que quiero hacer
+# normalmente quiero tener un padding de al menos 1000 muestras (tomar con pinzas), en este caso depende de nperseg, ajusto con el parámetro nfft
 
-# lo que después voy a querer hacer es integrar, para calcular el area (potencia), eso se debe hacer en veces (no en dB)
+energia_acum = np.cumsum (psd_ECG) # esto devuelve un vector de sumas acumuladas, el area que estoy buscando vendría a ser el último valor
+energia_acum_norm = energia_acum / energia_acum[-1] # con [-1] accedo al último valor del vector
+corte = energia_acum_norm[-1] * 0.995
+indice_corte = int (np.where (energia_acum_norm >= corte)[0][0]) # con [0][0] me devuelve el primer valor que cumple con la condición
+frec_corte = ff_ECG[indice_corte]
+
 
 plt.figure (2)
 
 plt.subplot (2, 1, 1)
-plt.plot (nn_ECG, ecg_one_lead)
+plt.plot (nn_ECG, ecg_sin_ruido)
+plt.title ("Señal de ECG")
+plt.ylabel ("Amplitud")
+plt.xlabel ("Muestras")
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-plt.plot (ff_ECG, psd)
-# plt.plot (ff_ECG, 20*np.log10(np.abs(psd)))
+plt.plot (ff_ECG, psd_ECG)
+plt.plot (ff_ECG_cr, psd_ECG_cr)
+plt.axvline (frec_corte, linestyle='--', color='orange', label=f'Frecuencia de corte = {frec_corte} Hz')
+# plt.plot (ff_ECG, 10*np.log10(np.abs(psd)))
+plt.title ("ECG sin ruido por Método de Welch")
+plt.ylabel ("|X|^2")
+plt.xlabel ("Frecuencia [Hz]")
 plt.grid (True)
+plt.legend ()
 plt.xlim (0, 50)
 
 plt.tight_layout ()
