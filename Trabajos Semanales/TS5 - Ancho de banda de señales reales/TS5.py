@@ -7,6 +7,8 @@ import scipy.stats as st
 # import sounddevice as sd
 import scipy.io as sio
 
+
+# ----------------------- Lecutra de ECG ----------------------- #
 fs_ECG = 1000
 
 # ECG = sio.whosmat ('./ECG_TP4.mat') # devuelve una lista de variables dentro del archivo .mat (MATLAB)
@@ -93,3 +95,13 @@ plt.xlim (0, 50)
 
 plt.tight_layout ()
 plt.show ()
+
+# %%
+
+
+# ----------------------------------- Lecutra de audios ----------------------------------- #
+
+fs_1, wav_data_1 = sio.wavfile.read ('prueba psd.wav')
+fs_2, wav_data_2 = sio.wavfile.read ('silbido.wav')
+fs_3, wav_data_3 = sio.wavfile.read ('la cucaracha.wav')
+
