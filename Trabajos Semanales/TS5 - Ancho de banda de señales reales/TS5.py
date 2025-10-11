@@ -45,20 +45,20 @@ hb_1 = mat_struct['heartbeat_pattern1']
 hb_2 = mat_struct['heartbeat_pattern2']
 
 
-plt.figure (1)
+# plt.figure (1)
 
-plt.subplot (3, 1, 1)
-plt.plot(ecg_one_lead[5000:12000])
-plt.grid (True)
-plt.subplot (3, 1, 2)
-plt.plot(hb_1)
-plt.grid (True)
-plt.subplot (3, 1, 3)
-plt.plot(hb_2)
-plt.grid (True)
+# plt.subplot (3, 1, 1)
+# plt.plot(ecg_one_lead[5000:12000])
+# plt.grid (True)
+# plt.subplot (3, 1, 2)
+# plt.plot(hb_1)
+# plt.grid (True)
+# plt.subplot (3, 1, 3)
+# plt.plot(hb_2)
+# plt.grid (True)
 
-plt.tight_layout()
-plt.show()
+# plt.tight_layout()
+# plt.show()
 
 
 # ------------------------------------------- ECG sin ruido ------------------------------------------- #
@@ -179,7 +179,7 @@ corte_PPG_sr = energia_acum_PPG_sr_norm[-1] * 0.995
 indice_corte_PPG_sr = int (np.where (energia_acum_PPG_sr_norm >= corte_PPG_sr)[0][0])
 frec_corte_PPG_sr = ff_PPG_sr[indice_corte_PPG_sr]
 
-plt.figure (3)
+plt.figure (4)
 
 plt.subplot (2, 1, 1)
 plt.plot (nn_PPG_sr, PPG_sr, color='gray')
@@ -202,7 +202,7 @@ plt.tight_layout()
 plt.show()
 
 
-# ------------------------------------------- PPG sin ruido ------------------------------------------- #
+# ------------------------------------------- PPG con ruido ------------------------------------------- #
 
 
 PPG_cr = np.genfromtxt('PPG.csv', delimiter=',', skip_header=1) # omite la cabecera, si existe
@@ -223,7 +223,7 @@ corte_PPG_cr = energia_acum_PPG_cr_norm[-1] * 0.995
 indice_corte_PPG_cr = int (np.where (energia_acum_PPG_cr_norm >= corte_PPG_cr)[0][0])
 frec_corte_PPG_cr = ff_PPG_cr[indice_corte_PPG_cr]
 
-plt.figure (4)
+plt.figure (5)
 
 plt.subplot (2, 1, 1)
 plt.plot (nn_PPG_cr, PPG_cr, color='gray')
@@ -276,10 +276,17 @@ ff_3 = np.arange (N_3) * df_3
 
 
 # Utilizo método del Periodograma Ventaneado
-Per_audio_1 = np.abs ((fft (wav_data_1 * window.blackman(N_1)))**2) / N_1
-Per_audio_1_dB = 10*np.log10(Per_audio_1)
+per_audio_1 = np.abs ((fft (wav_data_1 * window.blackman(N_1)))**2) / N_1
+per_audio_1_dB = 10*np.log10(per_audio_1)
 
-plt.figure (4)
+energia_acum_1 = np.cumsum (per_audio_1)
+energia_acum_1_norm = energia_acum_1 / energia_acum_1[-1]
+corte_1 = energia_acum_1_norm[-1] * 0.995
+indice_corte_1 = (int) (np.where (energia_acum_1_norm >= corte_1)[0][0])
+frec_corte_1 = ff_1[indice_corte_1]
+
+
+plt.figure (6)
 
 plt.subplot (2, 1, 1)
 plt.plot (tt_1, wav_data_1, color='gray')
@@ -289,12 +296,14 @@ plt.ylabel ('Amplitud')
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-plt.plot (ff_1, Per_audio_1_dB, color='orange')
+plt.plot (ff_1, per_audio_1_dB, color='orange')
+plt.axvline (frec_corte_1, linestyle='--', color='gray', label=f'Frecuencia de corte = {frec_corte_1:.2f}')
 plt.title ('Periodograma')
 plt.xlabel ('Frecuencia [Hz]')
 plt.ylabel ('[dB]')
 plt.xlim (0, fs_1/2)
 plt.grid (True)
+plt.legend ()
 
 plt.tight_layout()
 plt.show()
@@ -304,10 +313,17 @@ plt.show()
 
 
 # Utilizo método de Blackman-Tukey
-Per_audio_2 = blackman_tukey (wav_data_2, M = None) / N_2
-Per_audio_2_dB = 10*np.log10(Per_audio_2)
+per_audio_2 = blackman_tukey (wav_data_2, M = None) / N_2
+per_audio_2_dB = 10*np.log10(per_audio_2)
 
-plt.figure (5)
+energia_acum_2 = np.cumsum (per_audio_2)
+energia_acum_2_norm = energia_acum_2 / energia_acum_2[-1]
+corte_2 = energia_acum_2_norm[-1] * 0.995
+indice_corte_2 = (int) (np.where (energia_acum_2_norm >= corte_2)[0][0])
+frec_corte_2 = ff_2[indice_corte_2]
+
+
+plt.figure (7)
 
 plt.subplot (2, 1, 1)
 plt.plot (tt_2, wav_data_2, color='gray')
@@ -317,12 +333,14 @@ plt.ylabel ('Amplitud')
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-plt.plot (ff_2, Per_audio_2_dB, color='orange')
+plt.plot (ff_2, per_audio_2_dB, color='orange')
+plt.axvline (frec_corte_2, linestyle='--', color='gray', label=f'Frecuencia de corte = {frec_corte_2:.2f}')
 plt.title ('Periodograma')
 plt.xlabel ('Frecuencia [Hz]')
 plt.ylabel ('[dB]')
 plt.xlim (0, fs_2/2)
 plt.grid (True)
+plt.legend ()
 
 plt.tight_layout()
 plt.show()
@@ -334,10 +352,16 @@ plt.show()
 # Utilizo método de Welch
 promedios_audio_3 = 10 # defino la cantidad de bloques a promediar
 nperseg_audio_3 = N_3 // promedios_audio_3
+ff_3_welch, per_audio_3 = sp.welch (wav_data_3, nfft = 10*nperseg_audio_3, fs = fs_3, nperseg = nperseg_audio_3, window = 'hann')
 
-ff_3_welch, Per_audio_3 = sp.welch (wav_data_3, nfft = 10*nperseg_audio_3, fs = fs_3, nperseg = nperseg_audio_3, window = 'hann')
+energia_acum_3 = np.cumsum (per_audio_3)
+energia_acum_3_norm = energia_acum_3 / energia_acum_3[-1]
+corte_3 = energia_acum_3_norm[-1] * 0.995
+indice_corte_3 = (int) (np.where (energia_acum_3_norm >= corte_3)[0][0])
+frec_corte_3 = ff_3[indice_corte_2]
 
-plt.figure (6)
+
+plt.figure (8)
 
 plt.subplot (2, 1, 1)
 plt.plot (tt_3, wav_data_3, color='gray')
@@ -347,12 +371,14 @@ plt.ylabel ('Amplitud')
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-plt.plot (ff_3_welch, Per_audio_3, color='orange')
+plt.plot (ff_3_welch, per_audio_3, color='orange')
+plt.axvline (frec_corte_3, linestyle='--', color='gray', label=f'Frecuencia de corte = {frec_corte_3:.2f}')
 plt.title ('Periodograma')
 plt.xlabel ('Frecuencia [Hz]')
 plt.ylabel ('[dB]')
 plt.xlim (0, 3000)
 plt.grid (True)
+plt.legend ()
 
 plt.tight_layout()
 plt.show()
