@@ -39,38 +39,40 @@ fase_3 = np.unwrap (np.angle(h_3))
 
 # %%
 
-plt.figure (1)
+fig, ax = plt.subplots()
 
-plt.plot (np.real(p_1), np.imag(p_1), ls='', marker='x', markersize=10, label='Polos')
-# axes_hdl = plt.gca()
+circ_1z = plt.Circle ((0, 0), radius=3, fill=False, ls='--', color='gray')
+ax.add_patch(circ_1z)
+circ_1p = plt.Circle ((0, 0), radius=1, fill=False, ls='--', color='gray')
+ax.add_patch(circ_1p)
 
+ax.plot (np.real(p_1), np.imag(p_1), ls='', marker='X', markersize=10, label='Polos')
 if len(z_1) > 0:
-    plt.plot (np.real(z_1), np.imag(z_1), ls='', marker='o', markersize=10, fillstyle='none', label='Ceros')
+    ax.plot (np.real(z_1), np.imag(z_1), ls='', marker='o', markersize=10, fillstyle='none', label='Ceros')
 plt.axhline (0, color='k', lw=0.5)
 plt.axvline (0, color='k', lw=0.5)
-# unit_circle = plt.patches.Circle((0, 0), radius=1, fill=False, color='gray', ls='dotted', lw=2)
-# axes_hdl.add_patch (unit_circle)
 
 plt.title ('Diagrama de Polos y Ceros de T_1 (plano S)')
 plt.xlabel (r'$\Re(z)$')
 plt.ylabel (r'$\Im(z)$')
 plt.legend ()
 plt.grid (True)
+plt.show ()
 
 plt.figure (2)
 
 plt.subplot (2, 1, 1)
 plt.semilogx (w_1, 20*np.log10(h_1_abs))
 plt.title ('Respuesta de módulo de T_1')
-plt.xlabel ('Pulsación angular (rad/seg)')
+plt.xlabel ('Pulsación angular [rad/seg]')
 plt.ylabel ('Módulo [dB]')
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
 plt.semilogx (w_1, np.degrees(fase_1))
 plt.title ('Respuesta de fase de T_1')
-plt.xlabel ('Pulsación angular (rad/seg)')
-plt.ylabel ('Fase')
+plt.xlabel ('Pulsación angular [rad/seg]')
+plt.ylabel ('Fase [°]')
 plt.grid (True)
 
 plt.tight_layout ()
@@ -78,19 +80,59 @@ plt.show ()
 
 # %%
 
-plt.figure (3)
+fig, ax = plt.subplots()
 
-plt.plot (np.real(p_2), np.imag(p_2), ls='', marker='x', markersize=10, label='Polos')
-# axes_hdl = plt.gca()
+circ_2z = plt.Circle ((0, 0), radius=1/3, fill=False, ls='--', color='gray')
+ax.add_patch(circ_2z)
+circ_2p = plt.Circle ((0, 0), radius=1, fill=False, ls='--', color='gray')
+ax.add_patch(circ_2p)
 
+ax.plot (np.real(p_2), np.imag(p_2), ls='', marker='X', markersize=10, label='Polos')
 if len(z_1) > 0:
-    plt.plot (np.real(z_2), np.imag(z_2), ls='', marker='o', markersize=10, fillstyle='none', label='Ceros')
+    ax.plot (np.real(z_2), np.imag(z_2), ls='', marker='o', markersize=10, fillstyle='none', label='Ceros')
 plt.axhline (0, color='k', lw=0.5)
 plt.axvline (0, color='k', lw=0.5)
-# unit_circle = plt.patches.Circle((0, 0), radius=1, fill=False, color='gray', ls='dotted', lw=2)
-# axes_hdl.add_patch (unit_circle)
 
 plt.title ('Diagrama de Polos y Ceros de T_2 (plano S)')
+plt.xlabel (r'$\Re(z)$')
+plt.ylabel (r'$\Im(z)$')
+plt.legend ()
+plt.grid (True)
+
+plt.figure (3)
+
+plt.subplot (2, 1, 1)
+plt.semilogx (w_2, 20*np.log10(h_2_abs))
+plt.title ('Respuesta de módulo de T_2')
+plt.xlabel ('Pulsación angular [rad/seg]')
+plt.ylabel ('Módulo [dB]')
+plt.grid (True)
+
+plt.subplot (2, 1, 2)
+plt.semilogx (w_2, np.degrees(fase_2))
+plt.title ('Respuesta de fase de T_2')
+plt.xlabel ('Pulsación angular [rad/seg]')
+plt.ylabel ('Fase [°]')
+plt.grid (True)
+
+plt.tight_layout ()
+plt.show ()
+
+# %%
+
+fig, ax = plt.subplots()
+
+circ_3 = plt.Circle ((0, 0), radius=1, fill=False, ls='--', color='gray')
+ax.add_patch(circ_3)
+
+plt.plot (np.real(p_3), np.imag(p_3), ls='', marker='X', markersize=10, label='Polos')
+if len(z_1) > 0:
+    plt.plot (np.real(z_3), np.imag(z_3), ls='', marker='o', markersize=10, fillstyle='none', label='Ceros')
+plt.axhline (0, color='k', lw=0.5)
+plt.axvline (0, color='k', lw=0.5)
+
+
+plt.title ('Diagrama de Polos y Ceros de T_3 (plano S)')
 plt.xlabel (r'$\Re(z)$')
 plt.ylabel (r'$\Im(z)$')
 plt.legend ()
@@ -99,56 +141,17 @@ plt.grid (True)
 plt.figure (4)
 
 plt.subplot (2, 1, 1)
-plt.semilogx (w_2, 20*np.log10(h_2_abs))
-plt.title ('Respuesta de módulo de T_2')
-plt.xlabel ('Pulsación angular (rad/seg)')
-plt.ylabel ('Módulo [dB]')
-plt.grid (True)
-
-plt.subplot (2, 1, 2)
-plt.semilogx (w_2, np.degrees(fase_2))
-plt.title ('Respuesta de fase de T_2')
-plt.xlabel ('Pulsación angular (rad/seg)')
-plt.ylabel ('Fase')
-plt.grid (True)
-
-plt.tight_layout ()
-plt.show ()
-
-# %%
-
-plt.figure (5)
-
-plt.plot (np.real(p_3), np.imag(p_3), ls='', marker='x', markersize=10, label='Polos')
-# axes_hdl = plt.gca()
-
-if len(z_1) > 0:
-    plt.plot (np.real(z_3), np.imag(z_3), ls='', marker='o', markersize=10, fillstyle='none', label='Ceros')
-plt.axhline (0, color='k', lw=0.5)
-plt.axvline (0, color='k', lw=0.5)
-# unit_circle = plt.patches.Circle((0, 0), radius=1, fill=False, color='gray', ls='dotted', lw=2)
-# axes_hdl.add_patch (unit_circle)
-
-plt.title ('Diagrama de Polos y Ceros de T_3 (plano S)')
-plt.xlabel (r'$\Re(z)$')
-plt.ylabel (r'$\Im(z)$')
-plt.legend ()
-plt.grid (True)
-
-plt.figure (6)
-
-plt.subplot (2, 1, 1)
 plt.semilogx (w_3, 20*np.log10(h_3_abs))
 plt.title ('Respuesta de módulo de T_3')
-plt.xlabel ('Pulsación angular (rad/seg)')
+plt.xlabel ('Pulsación angular [rad/seg]')
 plt.ylabel ('Módulo [dB]')
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
 plt.semilogx (w_3, np.degrees(fase_3))
 plt.title ('Respuesta de fase de T_3')
-plt.xlabel ('Pulsación angular (rad/seg)')
-plt.ylabel ('Fase')
+plt.xlabel ('Pulsación angular [rad/seg]')
+plt.ylabel ('Fase [°]')
 plt.grid (True)
 
 plt.tight_layout ()

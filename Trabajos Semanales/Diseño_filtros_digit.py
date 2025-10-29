@@ -22,10 +22,10 @@ ws = [0.1, 40] # frecuencia de stop/detenida (rad/seg)
 alpha_p = 1/2
 alpha_s = 40/2
 
-f_aprox = 'butter'   # aproxima módulo
+# f_aprox = 'butter'   # aproxima módulo
 # f_aprox = 'cheby1'   # aproxima módulo
 # f_aprox = 'cheby2'   # aproxima módulo
-# f_aprox = 'cauer'    # aproxima módulo
+f_aprox = 'cauer'    # aproxima módulo
 # f_aprox = 'bessel'   # aproxima fase
 
 # ---------------------------------- Diseño del filtro analógico ---------------------------------- #
@@ -151,7 +151,7 @@ plt.show()
 
 # %%
 
-# ----------------------------- Implementación del filtro----------------------------- #
+# ----------------------------- Implementación del filtro ----------------------------- #
 
 # ecg_filt = sig.sosfilt (mat_sos, ECG_cr)
 ecg_filt = sig.sosfiltfilt (mat_sos, ecg_one_lead)
