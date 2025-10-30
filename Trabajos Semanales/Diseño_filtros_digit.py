@@ -171,3 +171,6 @@ plt.grid (True)
 #    de entre 5 y 30 Hz. Por lo tanto, a ese rango de frecuencias, la señal filtrada será "más fiel" a la original
 
 # un buen filtro debe ser inocuo (poca alteración de la señal) en banda de paso y destructivo en banda de rechazo
+
+# los picos de la ECG que se asemejan a un pulso, dan a la salida del filtro algo muy similar a la RESPUESTA AL IMPULSO
+# esta respuesta aparece en ambas direcciones, pues estoy filtrando bidireccionalmente, debido a filtfilt
