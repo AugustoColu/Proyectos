@@ -6,6 +6,7 @@ import scipy.signal as sp
 import scipy.signal.windows as window
 import scipy.stats as st
 import scipy.io as sio
+from pytc2.sistemas_lineales import plot_plantilla
 
 # ------------------------------- Señal de ECG con ruido ------------------------------- #
 
@@ -175,14 +176,17 @@ plt.grid (True)
 
 # %%
 
-# -------------------------------------- Diseño de filtro FIR -------------------------------------- #
+# -------------------------------------- Diseño de filtro FIR (método de ventanas) -------------------------------------- #
 
 fs = 1000
-frecuencias = [0, 0.1, 0.8, 35, 45.7, fs//2] # firwin2 me pide que empiece en 0 y termine en fs/2
+frecuencias = [0, 0.1, 0.8, 35, 35.7, fs//2] # firwin2 me pide que empiece en 0 y termine en fs/2
 ganancia_deseada = [0, 0, 1, 1, 0, 0]
 # con esto doy los puntos que va a tratar de interpolar el filtro
 cant_coef = 2000
 retardo = (cant_coef - 1) // 2 # como es NO entero, debo 
+
+alpha_p = 1/2
+alpha_s = 40/2
 
 fir_rect = sig.firwin2 (numtaps = cant_coef, freq = frecuencias, gain = ganancia_deseada, window = 'boxcar', fs = fs, nfreqs = int((np.ceil(np.sqrt(cant_coef*2)**2))-1))
 # 'numtaps' es la cantidad de coeficientes de la func. transferencia T(w)
@@ -223,7 +227,8 @@ z, p, k = sig.sos2zpk (sig.tf2sos(b = fir_rect, a = 1)) # pasaje a zpk para visu
 plt.figure ()
 
 plt.subplot (3, 1, 1)
-plt.plot (w, 20*np.log10(np.abs(h)), label=f_aprox)
+# plot_plantilla (filter_type = 'bandpass', fpass = (0.8, 35), ripple = alpha_p*2, fstop = (0.1, 35.7), attenuation = alpha_s*2, fs = fs)
+plt.plot (w, 20*np.log10(np.abs(h)))
 plt.xlabel ('Frecuencia [Hz]')
 plt.ylabel ('Respuesta de módulo')
 plt.legend ()
@@ -246,7 +251,7 @@ plt.show ()
 
 
 
-ecg_filt_fir = sig.lfilter (b = fir_rect, a = 1, ecg_one_lead)
+ecg_filt_fir = sig.lfilter (b = fir_rect, a = 1, x = ecg_one_lead)
 
 plt.figure (4)
 
@@ -256,3 +261,103 @@ plt.legend ()
 plt.grid (True)
 
 # a diferencia del IIR, no fue necesario filtrar dos veces (filtfilt) para compensar la demora
+
+# %%
+
+# -------------------------------------- Diseño de filtro FIR (método de cuad. mínimos) -------------------------------------- #
+
+fs = 1000
+frecuencias = [0, 0.1, 0.8, 35, 35.7, fs/2] # firls me pide una cantidad par, pues solo diseña filtros de tipo I
+ganancia_deseada = [0, 0, 1, 1, 0, 0]
+# con esto doy los puntos que va a tratar de interpolar el filtro
+cant_coef = 2001
+retardo = (cant_coef - 1) // 2 # como es NO entero, debo 
+
+alpha_p = 1/2
+alpha_s = 40/2
+
+fir_ls = sig.firls (numtaps = cant_coef, bands = frecuencias, desired = ganancia_deseada, fs = fs)
+
+w, h = sig.freqz (b = fir_ls, worN=np.logspace(-2, 2, 1000), fs = fs)
+
+w_rad = w / (fs/2) * np.pi #### NO ENTIENDO ESTO ####
+
+fase = np.unwrap(np.angle(h))
+demora = -np.diff(fase) / np.diff(w_rad)
+
+z, p, k = sig.sos2zpk (sig.tf2sos(b = fir_rect, a = 1)) # pasaje a zpk para visualizar polos y ceros
+
+plt.figure ()
+
+plt.subplot (3, 1, 1)
+# plot_plantilla (filter_type = 'bandpass', fpass = (0.8, 35), ripple = alpha_p*2, fstop = (0.1, 35.7), attenuation = alpha_s*2, fs = fs)
+plt.plot (w, 20*np.log10(np.abs(h)))
+plt.xlabel ('Frecuencia [Hz]')
+plt.ylabel ('Respuesta de módulo')
+plt.legend ()
+plt.grid (True)
+
+plt.subplot (3, 1, 2)
+plt.plot (w, np.degrees(fase))
+plt.xlabel ('Frecuencia [Hz]')
+plt.ylabel ('Respuesta de fase')
+plt.grid (True)
+
+plt.subplot (3, 1, 3)
+plt.plot (w[:-1], demora)
+plt.xlabel ('Frecuencia [Hz]')
+plt.ylabel ('Demora [muestras]')
+plt.grid (True)
+
+plt.tight_layout ()
+plt.show ()
+
+# %%
+
+# -------------------------------------- Diseño de filtro FIR (método de Peaks-Mc.Clellan) -------------------------------------- #
+
+fs = 1000
+frecuencias = [0, 0.1, 0.8, 35, 35.7, fs/2]
+ganancia_deseada = [0, 1, 0]
+# con esto doy los puntos que va a tratar de interpolar el filtro
+cant_coef = 1500
+retardo = (cant_coef - 1) // 2 # como es NO entero, debo 
+
+alpha_p = 1/2
+alpha_s = 40/2
+
+fir_pm = sig.remez (numtaps = cant_coef, bands = frecuencias, desired = ganancia_deseada, fs = fs)
+
+w, h = sig.freqz (b = fir_pm, worN=np.logspace(-2, 2, 2000), fs = fs)
+
+w_rad = w / (fs/2) * np.pi #### NO ENTIENDO ESTO ####
+
+fase = np.unwrap(np.angle(h))
+demora = -np.diff(fase) / np.diff(w_rad)
+
+z, p, k = sig.sos2zpk (sig.tf2sos(b = fir_rect, a = 1)) # pasaje a zpk para visualizar polos y ceros
+
+plt.figure ()
+
+plt.subplot (3, 1, 1)
+# plot_plantilla (filter_type = 'bandpass', fpass = (0.8, 35), ripple = alpha_p*2, fstop = (0.1, 35.7), attenuation = alpha_s*2, fs = fs)
+plt.plot (w, 20*np.log10(np.abs(h)))
+plt.xlabel ('Frecuencia [Hz]')
+plt.ylabel ('Respuesta de módulo')
+plt.legend ()
+plt.grid (True)
+
+plt.subplot (3, 1, 2)
+plt.plot (w, np.degrees(fase))
+plt.xlabel ('Frecuencia [Hz]')
+plt.ylabel ('Respuesta de fase')
+plt.grid (True)
+
+plt.subplot (3, 1, 3)
+plt.plot (w[:-1], demora)
+plt.xlabel ('Frecuencia [Hz]')
+plt.ylabel ('Demora [muestras]')
+plt.grid (True)
+
+plt.tight_layout ()
+plt.show ()
