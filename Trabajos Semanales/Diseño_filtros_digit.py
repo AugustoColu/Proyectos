@@ -6,7 +6,7 @@ import scipy.signal as sp
 import scipy.signal.windows as window
 import scipy.stats as st
 import scipy.io as sio
-from pytc2.sistemas_lineales import plot_plantilla
+# from pytc2.sistemas_lineales import plot_plantilla
 
 # ------------------------------- Señal de ECG con ruido ------------------------------- #
 
@@ -185,8 +185,8 @@ ganancia_deseada = [0, 0, 1, 1, 0, 0]
 cant_coef = 2000
 retardo = (cant_coef - 1) // 2 # como es NO entero, debo 
 
-alpha_p = 1/2
-alpha_s = 40/2
+alpha_p = 1
+alpha_s = 40
 
 fir_rect = sig.firwin2 (numtaps = cant_coef, freq = frecuencias, gain = ganancia_deseada, window = 'boxcar', fs = fs, nfreqs = int((np.ceil(np.sqrt(cant_coef*2)**2))-1))
 # 'numtaps' es la cantidad de coeficientes de la func. transferencia T(w)
@@ -267,18 +267,20 @@ plt.grid (True)
 # -------------------------------------- Diseño de filtro FIR (método de cuad. mínimos) -------------------------------------- #
 
 fs = 1000
-frecuencias = [0, 0.1, 0.8, 35, 35.7, fs/2] # firls me pide una cantidad par, pues solo diseña filtros de tipo I
+frecuencias = [0, 0.4, 0.8, 35, 35.4, fs/2] # acá se "predistorsionó la plantilla" para dar más holgura a las verdadera
+                                            # frecuencias de la plantilla (alternativa para no aumentar coeficientes)
 ganancia_deseada = [0, 0, 1, 1, 0, 0]
+peso = [2, 1, 12] # acá tuve que "pesar", darle más importancia, a la transición de baja porque no cumplía con la plantilla
 # con esto doy los puntos que va a tratar de interpolar el filtro
-cant_coef = 2001
+cant_coef = 2501 # firls me pide una cantidad par, pues solo diseña filtros de tipo I
 retardo = (cant_coef - 1) // 2 # como es NO entero, debo 
 
-alpha_p = 1/2
-alpha_s = 40/2
+alpha_p = 1
+alpha_s = 40
 
-fir_ls = sig.firls (numtaps = cant_coef, bands = frecuencias, desired = ganancia_deseada, fs = fs)
+fir_ls = sig.firls (numtaps = cant_coef, bands = frecuencias, desired = ganancia_deseada, weight = peso, fs = fs)
 
-w, h = sig.freqz (b = fir_ls, worN=np.logspace(-2, 2, 1000), fs = fs)
+w, h = sig.freqz (b = fir_ls, worN=np.logspace(-2, 2, 2000), fs = fs)
 
 w_rad = w / (fs/2) * np.pi #### NO ENTIENDO ESTO ####
 
@@ -314,28 +316,28 @@ plt.show ()
 
 # %%
 
-# -------------------------------------- Diseño de filtro FIR (método de Peaks-Mc.Clellan) -------------------------------------- #
+# -------------------------------------- Diseño de filtro FIR (método de Peaks-McClellan) -------------------------------------- #
 
 fs = 1000
-frecuencias = [0, 0.1, 0.8, 35, 35.7, fs/2]
-ganancia_deseada = [0, 1, 0]
+frecuencias = [0, 0.1, 0.8, 35, 35.7, fs/2] # para este método debo hacer "simétricas" las transiciones, sino no converge
+ganancia_deseada = [0, 1, 0] # Peaks-McClellan toma la ganancia de a sectores
 # con esto doy los puntos que va a tratar de interpolar el filtro
 cant_coef = 1500
 retardo = (cant_coef - 1) // 2 # como es NO entero, debo 
 
-alpha_p = 1/2
-alpha_s = 40/2
+alpha_p = 1
+alpha_s = 40
 
 fir_pm = sig.remez (numtaps = cant_coef, bands = frecuencias, desired = ganancia_deseada, fs = fs)
 
-w, h = sig.freqz (b = fir_pm, worN=np.logspace(-2, 2, 2000), fs = fs)
+w, h = sig.freqz (b = fir_pm, worN=np.logspace(-2, 2, 2500), fs = fs)
 
 w_rad = w / (fs/2) * np.pi #### NO ENTIENDO ESTO ####
 
 fase = np.unwrap(np.angle(h))
 demora = -np.diff(fase) / np.diff(w_rad)
 
-z, p, k = sig.sos2zpk (sig.tf2sos(b = fir_rect, a = 1)) # pasaje a zpk para visualizar polos y ceros
+z, p, k = sig.sos2zpk (sig.tf2sos(b = fir_pm, a = 1)) # pasaje a zpk para visualizar polos y ceros
 
 plt.figure ()
 
