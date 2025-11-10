@@ -267,7 +267,7 @@ plt.grid (True)
 # -------------------------------------- Diseño de filtro FIR (método de cuad. mínimos) -------------------------------------- #
 
 fs = 1000
-frecuencias = [0, 0.4, 0.8, 35, 35.4, fs/2] # acá se "predistorsionó la plantilla" para dar más holgura a las verdadera
+frecuencias = [0, 0.4, 0.8, 35, 35.4, fs/2] # acá se "predistorsionó la plantilla" para dar más holgura a las verdaderas
                                             # frecuencias de la plantilla (alternativa para no aumentar coeficientes)
 ganancia_deseada = [0, 0, 1, 1, 0, 0]
 peso = [2, 1, 12] # acá tuve que "pesar", darle más importancia, a la transición de baja porque no cumplía con la plantilla
@@ -342,7 +342,7 @@ z, p, k = sig.sos2zpk (sig.tf2sos(b = fir_pm, a = 1)) # pasaje a zpk para visual
 plt.figure ()
 
 plt.subplot (3, 1, 1)
-# plot_plantilla (filter_type = 'bandpass', fpass = (0.8, 35), ripple = alpha_p*2, fstop = (0.1, 35.7), attenuation = alpha_s*2, fs = fs)
+    # plot_plantilla (filter_type = 'bandpass', fpass = (0.8, 35), ripple = alpha_p*2, fstop = (0.1, 35.7), attenuation = alpha_s*2, fs = fs)
 plt.plot (w, 20*np.log10(np.abs(h)))
 plt.xlabel ('Frecuencia [Hz]')
 plt.ylabel ('Respuesta de módulo')

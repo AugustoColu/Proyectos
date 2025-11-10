@@ -6,57 +6,63 @@ import scipy.signal as sp
 
 def eje_temporal (N, fs):
     
-    t_final = N * 1/fs
-    tt = np.arange (0, t_final, 1/fs)
+    Ts = 1/fs # t_final siempre va a ser 1 / df
+    t_final = N * Ts # su inversa es la resolución espectral
+    tt = np.arange (0, t_final, Ts) # defino una sucesión de valores para el tiempo
     
     return tt
 
 
-def func_senoidal (tt, amp, frec, fase, v_medio, SNR):
+def func_senoidal (tt, amp, frec, SNR, fase = 0, v_medio = 0):
     
-    xx = amp * np.sin (2 * np.pi * frec * tt + fase) + v_medio
-    potencia_xx = np.sum (xx**2)
+    ss = amp * np.sin (2 * np.pi * frec * tt + fase) + v_medio
+    pot_ss = np.mean (np.abs(ss)**2)
     
     if SNR == None:
-        return xx
+        return ss
     
-    N = len(tt)
-    ruido = np.zeros (N)
-    for k in np.arange (0, N, 1):
-        pot_snr = amp**2 / (2*10**(SNR/10))                                 
-        ruido[k] = np.random.normal (0, pot_snr)
+    pot_ruido = pot_ss / (10**(SNR/10))
+    ruido = np.sqrt(pot_ruido) * np.random.randn(len(ss))
     
-    return xx + ruido
+    return ss + ruido
 
 
+amp_0 = 1
 N = 1000
 fs = 1000
-df = fs / N
+df = fs/N
+frec_1 = (N/4)*df
+frec_2 = ((N/4)+0.25)*df
+frec_3 = ((N/4)+0.5)*df
 
 tt = eje_temporal (N, fs)
 nn = np.arange (N) # vector adimensional de muestras
 ff = np.arange (N) * df # vector en frecuencia al escalar las muestras por la resolución espectral
 
-x_1 = func_senoidal (tt = tt, amp = 1, frec = (N/4)*df, fase = 0, v_medio = 0, SNR = None)
-x_1 = x_1 / np.std(x_1) # potencia normalizada, idem. a dividir por np.sum(x_1**2)
+x_1 = func_senoidal (tt = tt, amp = amp_0, frec = frec_1, SNR = None)
+# observar que (N/4)*df = (N/4)*(fs/N) = fs/4, por ende no importa la cantidad de muestras, siempre la frecuencia será fs/4
+RMS_1 = np.sqrt (np.mean(x_1**2)) # el RMS (Root Mean Square) es el valor efectivo de la señal, se calcula como la raíz de la potencia
+                                  # la potencia de una señal discreta se calcula como (1/N)*np.sum(np.abs(x_1)**2) o bien np.mean(np.abs(x_1)**2)
+                                  # para señales con media = 0 (centradas), vale que STD = RMS y Varianza = Potencia
+x_1 = x_1 / RMS_1 # señal de potencia normalizada, se utiliza RMS o STD porque la potencia tiene unidades de amplitud^2
 X_1 = fft (x_1)
-pot_X1 = np.mean (np.abs(X_1)**2)/N
-print ("Potencia de la PSD correspondiente a la señal 1 ->", pot_X1)
+print ("Potencia de la señal 1 en tiempo     (x_1) ->", np.mean(np.abs(x_1)**2))
+print ("Potencia de la señal 1 en frecuencia (X_1) ->", (1/N)*np.mean(np.abs(X_1)**2))
 
-x_2 = func_senoidal (tt = tt, amp = 1, frec = ((N/4)+0.25)*df, fase = 0, v_medio = 0, SNR = None)
-x_2 = x_2 / np.std(x_2)
+x_2 = func_senoidal (tt = tt, amp = amp_0, frec = frec_2, SNR = None)
+x_2 = x_2 / np.std (x_2) # normalizo por el STD, idem. en este caso a normalizar por el RMS
 X_2 = fft (x_2)
-pot_X2 = np.mean (np.abs(X_2)**2)/N
-print ("Potencia de la PSD correspondiente a la señal 2 ->", pot_X2)
+print ("Potencia de la señal 2 en tiempo     (x_2) ->", np.mean(np.abs(x_2)**2))
+print ("Potencia de la señal 1 en frecuencia (X_2) ->", (1/N)*np.mean(np.abs(X_2)**2))
 
-x_3 = func_senoidal (tt = tt, amp = 1, frec = ((N/4)+0.5)*df, fase = 0, v_medio = 0, SNR = None)
-x_3 = x_3 / np.std(x_3)
+x_3 = func_senoidal (tt = tt, amp = amp_0, frec = frec_3, SNR = None)
+x_3 = x_3 / np.std (x_3)
 X_3 = fft (x_3)
-pot_X3 = np.mean (np.abs(X_3)**2)/N
-print ("Potencia de la PSD correspondiente a la señal 3 ->", pot_X3)
+print ("Potencia de la señal 3 en tiempo     (x_3) ->", np.mean(np.abs(x_3)**2))
+print ("Potencia de la señal 1 en frecuencia (X_3) ->", (1/N)*np.mean(np.abs(X_3)**2))
 
 
-### Señal 1 ###
+### Ploteos ###
 
 plt.figure (1)
 
@@ -70,8 +76,8 @@ plt.xlim (0, N/2) # ...visualizo hasta Nyquist
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-#plt.plot (ff, np.abs(X), color='black') # eje de ordenadas adimensional (N/2)
-plt.plot (ff, 10*np.log10(np.abs(X_1)**2), color='orange') # eje de ordenadas adimensional en dB
+#plt.plot (ff, np.abs(X), color='black') # Eje de ordenadas adimensional (N/2)
+plt.plot (ff, 10*np.log10(np.abs(X_1/N)**2), color='orange') # Eje de ordenadas adimensional en dB
 plt.title ("Densidad Espectral de Potencia")
 plt.xlabel ("Frecuencia [Hz]")
 plt.ylabel ("[dB]")
@@ -80,8 +86,6 @@ plt.grid (True)
 
 plt.tight_layout ()
 
-
-### Señal 2 ###
 
 plt.figure (2)
 
@@ -94,7 +98,7 @@ plt.xlim (0, N/2) # ...visualizo hasta Nyquist
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-plt.plot (ff, 10*np.log10(np.abs(X_2)**2), color='orange')
+plt.plot (ff, 10*np.log10(np.abs(X_2/N)**2), color='orange')
 plt.title ("Densidad Espectral de Potencia")
 plt.xlabel ("Frecuencia [Hz]")
 plt.ylabel ("[dB]")
@@ -103,8 +107,6 @@ plt.grid (True)
 
 plt.tight_layout ()
 
-
-### Señal 3 ###
 
 plt.figure (3)
 
@@ -117,7 +119,7 @@ plt.xlim (0, N/2) # ...visualizo hasta Nyquist
 plt.grid (True)
 
 plt.subplot (2, 1, 2)
-plt.plot (ff, 10*np.log10(np.abs(X_3)**2), color='orange')
+plt.plot (ff, 10*np.log10(np.abs(X_3/N)**2), color='orange')
 plt.title ("Densidad Espectral de Potencia")
 plt.xlabel ("Frecuencia [Hz]")
 plt.ylabel ("[dB]")
@@ -125,28 +127,44 @@ plt.xlim (0, fs/2)
 plt.grid (True)
 
 plt.tight_layout ()
+
 plt.show ()
 
 
 # %% Zero-Padding
 
-zeros = np.zeros (9*N)
-x_1zp = np.concatenate ((x_1, zeros)) # opción 1: concateno x_1 con ceros
-X_1zp = fft (x_1zp) # transformo el vector concatenado
+zeros = np.zeros (N*9)
+ff_zp = np.arange (10*N) * (fs / (10*N))
 
-X_2zp = fft (x_2, 10*N) # opción 2: calculo la fft con cierta longitud (el exceso de x_2 lo completa con ceros)
+x_1zp = np.concatenate ((x_1, zeros))
+X_1zp = fft (x_1zp)
 
-X_3zp = fft (x_3, 10*N)
+x_2zp = np.concatenate ((x_2, zeros))
+X_2zp = fft (x_2zp)
 
-ttPadding = np.arange (len(X_1zp)) * (fs / (len(X_1zp)))
+x_3zp = np.concatenate ((x_3, zeros))
+X_3zp = fft (x_3zp)
+
+
+print ("\n-------- Teorema de Parseval al implementar Zero-Padding --------")
+
+print ("Potencia de la señal 1 en tiempo     (x_1zp) ->", np.mean(np.abs(x_1zp)**2)*10)
+print ("Potencia de la señal 1 en frecuencia (X_1zp) ->", (1/N)*np.mean(np.abs(X_1zp)**2))
+
+print ("Potencia de la señal 2 en tiempo     (x_2zp) ->", np.mean(np.abs(x_2zp)**2)*10)
+print ("Potencia de la señal 1 en frecuencia (X_2zp) ->", (1/N)*np.mean(np.abs(X_2zp)**2))
+
+print ("Potencia de la señal 3 en tiempo     (x_3zp) ->", np.mean(np.abs(x_3zp)**2)*10)
+print ("Potencia de la señal 1 en frecuencia (X_3zp) ->", (1/N)*np.mean(np.abs(X_3zp)**2))
 
 
 plt.figure (4)
 
 plt.subplot (3, 1, 1)
-plt.plot (ttPadding, 10*np.log10(np.abs(X_1zp)), linestyle='', marker='x', color='black', label='FFT')
-plt.plot (ttPadding, 10*np.log10(np.abs(X_1zp)**2), color='orange', label='PSD')
-plt.title ("Señal de frecuencia N/4 con Zero-Padding")
+
+plt.plot (ff, 10*np.log10(np.abs(X_1/N)**2), color='black', label='Resolución de 1 Hz')
+plt.plot (ff_zp, 10*np.log10(np.abs(X_1zp/N)**2), color='orange', label='Zero-Padding')
+plt.title ("Densidad Espectral de Potencia de la señal 1")
 plt.xlabel ("Frecuencia [Hz]")
 plt.ylabel ("[dB]")
 plt.xlim (0, fs/2)
@@ -154,22 +172,24 @@ plt.grid (True)
 plt.legend ()
 
 plt.subplot (3, 1, 2)
-plt.plot (ttPadding, 10*np.log10(np.abs(X_2zp)), linestyle='', marker='x', color='black', label='FFT')
-plt.plot (ttPadding, 10*np.log10(np.abs(X_2zp)**2), color='orange', label='PSD señal 2')
-plt.xlim (0, fs/2)
-plt.title ("Señal de frecuencia N/4 + 0.25 con Zero-Padding")
+
+plt.plot (ff, 10*np.log10(np.abs(X_2/N)**2), color='black', label='Resolución de 1 Hz')
+plt.plot (ff_zp, 10*np.log10(np.abs(X_2zp/N)**2), color='orange', label='Zero-Padding')
+plt.title ("Densidad Espectral de Potencia de la señal 2")
 plt.xlabel ("Frecuencia [Hz]")
 plt.ylabel ("[dB]")
+plt.xlim (0, fs/2)
 plt.grid (True)
 plt.legend ()
 
 plt.subplot (3, 1, 3)
-plt.plot (ttPadding, 10*np.log10(np.abs(X_3zp)), linestyle='', marker='x', color='black', label='FFT')
-plt.plot (ttPadding, 10*np.log10(np.abs(X_3zp)**2), color='orange', label='PSD señal 3')
-plt.xlim (0, fs/2)
-plt.title ("Señal de frecuencia N/4 + 0.5 con Zero-Padding")
+
+plt.plot (ff, 10*np.log10(np.abs(X_3/N)**2), color='black', label='Resolución de 1 Hz')
+plt.plot (ff_zp, 10*np.log10(np.abs(X_3zp/N)**2), color='orange', label='Zero-Padding')
+plt.title ("Densidad Espectral de Potencia de la señal 3")
 plt.xlabel ("Frecuencia [Hz]")
 plt.ylabel ("[dB]")
+plt.xlim (0, fs/2)
 plt.grid (True)
 plt.legend ()
 
