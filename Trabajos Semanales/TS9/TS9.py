@@ -6,6 +6,7 @@ import scipy.signal as sp
 import scipy.signal.windows as window
 import scipy.stats as st
 import scipy.io as sio
+import scipy.interpolate as interpol
 # from pytc2.sistemas_lineales import plot_plantilla
 
 # ------------------------------- Señal de ECG con ruido ------------------------------- #
@@ -62,12 +63,46 @@ plt.xlim (0, 60)
 plt.tight_layout()
 plt.show()
 
-# ------------------------------------- Estimación ------------------------------------- #
+# %%
 
-x = ecg_one_lead[:50000].ravel()
-b_estimador = sig.medfilt (sig.medfilt (x, 201), 601)
+# ------------------------------------- Estimación por mediana ------------------------------------- #
 
-plt.plot (x)
+s = ecg_one_lead[:50000].ravel()
+b_estimador = sig.medfilt (sig.medfilt (s, 201), 601)
+
+plt.plot (s)
 plt.plot (b_estimador)
 plt.grid (True)
-plt.plot (x-b_estimador)
+plt.plot (s-b_estimador)
+
+# todo artefacto producido por la NO LINEALIDAD (como las discontinuidades) generan ensanchamiento del
+# ancho de banda, y puede contaminar a la señal con energía en frecuencias que antes no tenían energía 
+
+# %%
+
+# ------------------------------------- Estimación por Splines Cúbicos ------------------------------------- #
+
+s = ecg_one_lead.ravel()
+qrs_x = mat_struct ['qrs_detections'].flatten() - 80
+qrs_y = ecg_one_lead[qrs_x]
+
+b_estimador = interpol.CubicSpline (x = qrs_x, y = qrs_y)
+x = s - b_estimador(np.arange(len(s)))
+
+plt.figure ()
+plt.plot (b_estimador(np.arange(len(s))), label='Estimador')
+# plt.plot (s, label='ECG', color='black')
+plt.plot (x, label='ECG filtrada')
+plt.plot (qrs_x, qrs_y, marker='x', ls='', color='orchid')
+plt.grid (True)
+plt.legend ()
+
+# plt.figure ()
+# plt.plot (s[900000:912000], label='ECG', color='black')
+# plt.plot (x[900000:912000], label='estimación')
+# # plt.plot (qrs_x, qrs_y, marker='x', ls='', color='orchid')
+# plt.legend ()
+
+# un filtro derivador (resta muestras) es un pasa-altos, pues tiene un cero en DC (origen de coordenadas, plano S)
+# que hace crecer al módulo a medida que w aumenta
+# un promediador (suma muestras) es una filtro pasa-bajos
