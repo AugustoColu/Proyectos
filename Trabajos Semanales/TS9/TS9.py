@@ -69,20 +69,22 @@ plt.show()
 
 s = ecg_one_lead[:50000].ravel()
 b_estimador = sig.medfilt (sig.medfilt (s, 201), 601)
+x = s - b_estimador
 
-plt.plot (s)
-plt.plot (b_estimador)
+plt.plot (s, label='ECG')
+plt.plot (b_estimador, label='Estimador')
+plt.plot (x, label='ECG filtrada')
 plt.grid (True)
-plt.plot (s-b_estimador)
+plt.legend ()
 
-# todo artefacto producido por la NO LINEALIDAD (como las discontinuidades) generan ensanchamiento del
+# todo artefacto producido por la NO LINEALIDAD (como las discontinuidades, picos) generan ensanchamiento del
 # ancho de banda, y puede contaminar a la señal con energía en frecuencias que antes no tenían energía 
 
 # %%
 
 # ------------------------------------- Estimación por Splines Cúbicos ------------------------------------- #
 
-s = ecg_one_lead.ravel()
+s = ecg_one_lead.flatten()
 qrs_x = mat_struct ['qrs_detections'].flatten() - 80
 qrs_y = ecg_one_lead[qrs_x]
 
@@ -106,3 +108,25 @@ plt.legend ()
 # un filtro derivador (resta muestras) es un pasa-altos, pues tiene un cero en DC (origen de coordenadas, plano S)
 # que hace crecer al módulo a medida que w aumenta
 # un promediador (suma muestras) es una filtro pasa-bajos
+
+# %%
+
+# ------------------------------------- Filtro adaptado ------------------------------------- #
+
+qrs_patt = mat_struct ['qrs_pattern1'].flatten()
+patt1 = mat_struct ['heartbeat_pattern1'].flatten()
+patt2 = mat_struct ['heartbeat_pattern2'].flatten()
+
+ecg_norm = ecg_one_lead / np.std(ecg_one_lead)
+# para que la varianza de una señal sea unitaria, debo escalar por el desvío estándar, esto se hace cuando quiero comparar dos señales de potencias muy diferidas
+
+pulse_detect = sig.lfilter (b = qrs_patt, a = [1], x = ecg_norm.astype(np.float64)) # lfilter en el fondo convoluciona las señales, es similar a correlacionarlas
+pulse_detect_norm = np.abs(pulse_detect) / np.std(pulse_detect)
+
+beats, _ = sp.find_peaks (x = pulse_detect_norm, height = 1, distance = 300)
+
+plt.plot (pulse_detect_norm[50:], label='Detector de pulsos') # con [50:] adelanto/retraso la señal para compensar la demora y alinearla con la ECG 
+plt.plot (ecg_norm, color='gray', label='ECG')
+plt.plot (beats, pulse_detect_norm[beats], ls='', marker='x', color='orange')
+plt.grid (True)
+plt.legend ()

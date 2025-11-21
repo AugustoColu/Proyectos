@@ -342,7 +342,7 @@ z, p, k = sig.sos2zpk (sig.tf2sos(b = fir_pm, a = 1)) # pasaje a zpk para visual
 plt.figure ()
 
 plt.subplot (3, 1, 1)
-    # plot_plantilla (filter_type = 'bandpass', fpass = (0.8, 35), ripple = alpha_p*2, fstop = (0.1, 35.7), attenuation = alpha_s*2, fs = fs)
+# plot_plantilla (filter_type = 'bandpass', fpass = (0.8, 35), ripple = alpha_p*2, fstop = (0.1, 35.7), attenuation = alpha_s*2, fs = fs)
 plt.plot (w, 20*np.log10(np.abs(h)))
 plt.xlabel ('Frecuencia [Hz]')
 plt.ylabel ('Respuesta de módulo')
