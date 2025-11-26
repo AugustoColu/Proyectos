@@ -1,8 +1,8 @@
-import numpy as np
 import matplotlib.pyplot as plt
-import scipy.signal as sig
+import numpy as np
 from numpy.fft import fft
-import scipy.signal as sp
+import scipy as sp
+import scipy.signal as sig
 import scipy.signal.windows as window
 import scipy.stats as st
 import scipy.io as sio
@@ -275,3 +275,50 @@ plt.plot (ecg_norm)
 plt.plot (beats[tp_idx], ecg_norm[beats[tp_idx]], ls='', marker='o', color='green', label='True +')
 plt.plot (beats[fp_idx], ecg_norm[beats[fp_idx]], ls='', marker='x', color='red', label='False +')
 plt.plot (det_ref[fn_idx], ecg_norm[beats[fn_idx]], ls='', marker='s', color='orange', label='False -')
+
+# %%
+
+# ------------------------------------- BONUS ------------------------------------- #
+
+D = 20
+
+# Defino parámetros para el filtrado pasa-bajos PREVIO a diezmar
+
+cant_coef = 2001
+retardo = (cant_coef - 1) // 2
+frecs = [0, 37, 38, fs_ECG//2]
+deseado = [1, 1, 0, 0]
+peso = [4, 1]
+
+fir_ls = sig.firls (numtaps = cant_coef, bands = frecs, desired = deseado, weight = peso, fs = fs_ECG)
+w, h = sig.freqz (b = fir_ls, worN=np.logspace(-2, 2, 2000), fs = fs_ECG)
+
+ecg_filt = sig.lfilter (b = fir_ls, a = 1, x = ecg_one_lead)
+
+# Diezmo la señal de ECG por D = 20, esto redefine la frecuencia de muestreo a 50Hz
+
+ecg_ds = sig.decimate (x = ecg_filt, q = D)
+estimador_med_DS = sig.medfilt (sig.medfilt (ecg_ds, (201//D)-1), (601//D)-1) # estimador de mediana diezmado
+
+# ceros = np.zeros (len(estimador_med_DS) * D)
+# ceros[::D] = estimador_med_DS
+# frecs = [0, 36//D, 38//D, (fs_ECG//D)//2]
+# fir_ls = sig.firls (numtaps = cant_coef, bands = frecs, desired = deseado, weight = peso, fs = fs_ECG//D)
+# estimador_med_recons = sig.lfilter (b = fir_ls, a = 1, x = ceros)
+
+estimador_med_recons = sig.resample_poly (x = estimador_med_DS, up = D, down = 1, window = fir_ls)
+# esta operación interpola y filtra con el mismo pasa-bajos utilizado previo al diezmado
+
+estimador_med_recons = estimador_med_recons[retardo:] # compenso la demora producida por el filtrado FIR
+ecg_one_lead = ecg_one_lead[:len(estimador_med_recons)] # ajusto dimensiones (no le encontré otra vuelta)
+ecg_estimada_med_ds = ecg_one_lead - estimador_med_recons # subtraigo la estimación de línea base
+
+plt.figure ()
+
+plt.plot (estimador_med)
+plt.plot (estimador_med_recons)
+
+plt.figure ()
+
+plt.plot (ecg_one_lead)
+plt.plot (ecg_estimada_med_ds)
