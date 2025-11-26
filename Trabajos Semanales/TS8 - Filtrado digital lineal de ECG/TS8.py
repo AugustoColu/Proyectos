@@ -39,7 +39,7 @@ corte_ECG_cr = energia_acum_cr_norm[-1] * 0.995
 indice_corte_cr = int (np.where (energia_acum_cr_norm >= corte_ECG_cr)[0][0])
 frec_corte_cr = ff_ECG_cr[indice_corte_cr]
 
-plt.figure (3)
+plt.figure ()
 
 plt.subplot (2, 1, 1)
 plt.plot (nn_ECG_cr, ECG_cr, color='gray')
@@ -255,6 +255,122 @@ plt.plot (ecg_filt_6[900000:912000], label='Parks - McClellan')
 plt.title ('Región: 15 - 15.2 minutos')
 plt.grid (True)
 plt.legend ()
+
+plt.tight_layout ()
+plt.show ()
+
+# %%
+
+# ------------------------------------------ Trabajo con señal de PPG ------------------------------------------ #
+
+ppg = np.loadtxt ('PPG.csv', delimiter=',')
+ppg = ppg - np.mean(ppg) # busco area neta nula
+ppg_sin_ruido = np.load ('ppg_sin_ruido.npy')
+
+fs_ppg = 1000
+
+# --------------------------- Estimación de ancho de banda PPG --------------------------- #
+
+ppg_trunc = ppg
+
+N_ppg = len (ppg_trunc)
+
+df_ppg = fs_ppg / N_ppg
+nn_ppg = np.arange (N_ppg)
+
+promedios_ppg = 16
+nperseg_ppg = N_ppg // promedios_ppg
+
+ff_ppg, per_ppg = sp.welch (ppg_trunc, nfft = 6*nperseg_ppg, fs = fs_ppg, nperseg = nperseg_ppg, window = 'hann')
+
+energia_acum_ppg = np.cumsum (per_ppg)
+energia_acum_ppg_norm = energia_acum_ppg / energia_acum_ppg[-1]
+corte_ppg = energia_acum_ppg_norm[-1] * 0.99 # recorte al 98%
+indice_corte_ppg = int (np.where (energia_acum_ppg_norm >= corte_ppg)[0][0])
+frec_corte_ppg = ff_ppg[indice_corte_ppg]
+
+plt.figure ()
+
+plt.subplot (2, 1, 1)
+plt.plot (nn_ppg, ppg_trunc, color='gray')
+plt.title ("Señal de PPG con ruido")
+plt.ylabel ("Amplitud")
+plt.xlabel ("Muestras")
+plt.grid (True)
+
+plt.subplot (2, 1, 2)
+plt.plot (ff_ppg, per_ppg, color='orange')
+plt.axvline (frec_corte_ppg, linestyle='--', color='gray', label=f'Frecuencia de corte = {frec_corte_ppg:.2f} Hz')
+plt.title ("Periodograma")
+plt.ylabel ("|X|^2")
+plt.xlabel ("Frecuencia [Hz]")
+plt.grid (True)
+plt.legend ()
+plt.xlim (0, 15)
+
+plt.tight_layout ()
+plt.show ()
+
+# ------------------------------------------------ Diseño de plantilla ------------------------------------------------ #
+
+# suponiendo que la señal fue muestreada a 1000Hz, se detecta movimiento a baja frecuencia (línea base) de unos 0.33Hz (movimiento de 3 seg)
+
+wp_ppg = [0.5, 10.8] # frecuencia de corte/paso (rad/seg)
+ws_ppg = [0.33, 12] # frecuencia de stop/detenida (rad/seg)
+
+ripple = 1
+atte = 40
+
+# ----------------------------------------------- 1° filtro IIR (Butterworth) ----------------------------------------------- #
+
+mat_sos_1_ppg = sig.iirdesign (wp = wp_ppg, ws = ws_ppg, gpass = ripple/2, gstop = atte/2, analog = False, ftype = 'butter', output = 'sos', fs = fs_ppg)
+mat_sos_11_ppg = sig.iirdesign (wp = wp_ppg, ws = ws_ppg, gpass = ripple, gstop = atte, analog = False, ftype = 'butter', output = 'sos', fs = fs_ppg)
+
+w_1_ppg, h_1_ppg = sig.freqz_sos (sos = mat_sos_1_ppg, worN=np.logspace(-2, 1.9, 1000), fs = fs_ppg)
+w_11_ppg, h_11_ppg = sig.freqz_sos (sos = mat_sos_11_ppg, worN=np.logspace(-2, 1.9, 1000), fs = fs_ppg)
+w_rad_1_ppg = w_1_ppg / (fs_ppg*np.pi/2)
+
+ppg_filt_1 = sig.sosfiltfilt (mat_sos_1_ppg, ppg)
+
+# ----------------------------------------------- 2° filtro IIR (Cheby I) ----------------------------------------------- #
+
+mat_sos_2_ppg = sig.iirdesign (wp = wp_ppg, ws = ws_ppg, gpass = ripple/2, gstop = atte/2, analog = False, ftype = 'cheby1', output = 'sos', fs = fs_ppg)
+mat_sos_22_ppg = sig.iirdesign (wp = wp_ppg, ws = ws_ppg, gpass = ripple, gstop = atte, analog = False, ftype = 'cheby1', output = 'sos', fs = fs_ppg)
+
+w_2_ppg, h_2_ppg = sig.freqz_sos (sos = mat_sos_2_ppg, worN=np.logspace(-2, 1.9, 1000), fs = fs_ppg)
+w_22_ppg, h_22_ppg = sig.freqz_sos (sos = mat_sos_22_ppg, worN=np.logspace(-2, 1.9, 1000), fs = fs_ppg)
+w_rad_2_ppg = w_2_ppg / (fs_ppg*np.pi/2)
+
+ppg_filt_2 = sig.sosfiltfilt (mat_sos_2_ppg, ppg)
+
+# -------------------------------------------------------- Comparación -------------------------------------------------------- #
+
+plt.figure ()
+
+plt.subplot (3, 1, 1)
+plt.plot (w_1_ppg, 20*np.log10(np.abs(h_1_ppg)), label='Butterworth')
+plt.plot (w_2_ppg, 20*np.log10(np.abs(h_2_ppg)), label='Chebyshev tipo I')
+plt.title ('Respuesta de módulo de filtros IIR')
+plt.xlabel ('Frecuencia [Hz]')
+plt.ylabel ('Atenuación [dB]')
+plt.legend ()
+plt.grid (True)
+
+plt.subplot (3, 1, 2)
+plt.plot (ppg[0:25000], label='sin filtrar')
+plt.plot (ppg_filt_1[0:25000], label='Butterworth')
+plt.plot (ppg_filt_2[0:25000], label='Chebyshev tipo I')
+plt.title ('Región: 0 - 25 segudos')
+plt.legend ()
+plt.grid (True)
+
+plt.subplot (3, 1, 3)
+plt.plot (ppg[34000:42000], label='sin filtrar')
+plt.plot (ppg_filt_1[34000:42000], label='Butterworth')
+plt.plot (ppg_filt_2[34000:42000], label='Chebyshev tipo I')
+plt.title ('Región: 0 - 25 segudos')
+plt.legend ()
+plt.grid (True)
 
 plt.tight_layout ()
 plt.show ()
